@@ -381,7 +381,7 @@
                             @guest
                                 <li class="mb-2">
                                     <a class="fs-13 text-soft-light animate-underline-white" href="{{ route('deliveryboy.login') }}">
-                                        {{ translate('Login to Delivery Boy') }}
+                                        {{ translate('Login to Delivery Boy Panel') }}
                                     </a>
                                 </li>
                             @endguest
@@ -553,7 +553,7 @@
                         @guest
                             <li class="mb-2 pb-2 {{ areActiveRoutes(['deliveryboy.login'],' active')}}">
                                 <a class="fs-13 text-soft-light text-sm-secondary animate-underline-white" href="{{ route('deliveryboy.login') }}">
-                                    {{ translate('Login to Delivery Boy') }}
+                                    {{ translate('Login to Delivery Boy Panel') }}
                                 </a>
                             </li>
                         @endguest
