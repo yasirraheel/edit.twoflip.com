@@ -399,7 +399,14 @@ class HomeController extends Controller
                 abort(404);
             }
             if ($shop->verification_status != 0) {
-                return view('frontend.seller_shop', compact('shop'));
+                // Get paginated products for the All Products section on store home
+                $all_products = Product::where('user_id', $shop->user->id)
+                    ->where('published', 1)
+                    ->where('approved', 1)
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(24);
+                    
+                return view('frontend.seller_shop', compact('shop', 'all_products'));
             } else {
                 return view('frontend.seller_shop_without_verification', compact('shop'));
             }

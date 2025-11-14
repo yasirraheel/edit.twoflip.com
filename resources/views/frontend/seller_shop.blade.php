@@ -410,6 +410,40 @@
                     @endforeach
                 @endif
 
+                <!-- All Products Section on Store Home -->
+                @if(isset($all_products) && $all_products->count() > 0)
+                <section class="mt-3 mb-3" id="section_all_products">
+                    <div class="container">
+                        <!-- Top Section -->
+                        <div class="d-flex mb-4 align-items-baseline justify-content-between">
+                            <!-- Title -->
+                            <h3 class="fs-16 fs-md-20 fw-700 mb-3 mb-sm-0">
+                                <span class="pb-3">{{ translate('All Products') }}</span>
+                            </h3>
+                            <!-- Links -->
+                            <div class="d-flex">
+                                <a class="text-blue fs-12 fw-700 hov-text-primary" href="{{ route('shop.visit.type', ['slug'=>$shop->slug, 'type'=>'all-products']) }}">{{ translate('View All') }}</a>
+                            </div>
+                        </div>
+                        
+                        <!-- Products Grid with Infinite Scroll -->
+                        <div class="px-3">
+                            <div class="row gutters-16 row-cols-xxl-4 row-cols-xl-3 row-cols-lg-4 row-cols-md-3 row-cols-2 border-top border-left" id="all-products-container">
+                                @foreach ($all_products as $key => $product)
+                                    <div class="col border-right border-bottom has-transition hov-shadow-out z-1">
+                                        @include('frontend.'.get_setting('homepage_select').'.partials.product_box_1',['product' => $product])
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        
+                        <!-- Load More Button (hidden by default) -->
+                        <div class="text-center mt-3" id="load-more-section" style="display: none;">
+                            <button class="btn btn-primary" id="load-more-all-products">{{ translate('Load More Products') }}</button>
+                        </div>
+                    </div>
+                </section>
+                @endif
 
             @elseif ($type == 'cupons')
                 <!-- All Coupons Section -->
@@ -922,6 +956,90 @@
                 if (scrollPercentage >= 0.8) {
                     console.log('Scroll triggered at', Math.round(scrollPercentage * 100) + '%, loading more products...');
                     loadMoreSellerProducts();
+                }
+            });
+        });
+        @endif
+
+        @if(!isset($type) && isset($all_products))
+        // Infinite scroll for All Products section on Store Home
+        let allProductsPage = {{ $all_products->currentPage() }};
+        let allProductsLastPage = {{ $all_products->lastPage() }};
+        let allProductsLoading = false;
+        
+        console.log('Store Home All Products initialized - Current page:', allProductsPage, 'Last page:', allProductsLastPage);
+        
+        function loadMoreAllProducts() {
+            if (allProductsLoading || allProductsPage >= allProductsLastPage) {
+                return;
+            }
+            
+            allProductsLoading = true;
+            allProductsPage++;
+            
+            let shopSlug = '{{ $shop->slug }}';
+            let url = '/shop/' + shopSlug + '/all-products';
+            
+            console.log('Loading more all products from store home, page:', allProductsPage);
+            
+            $.ajax({
+                url: url,
+                type: 'GET',
+                data: 'page=' + allProductsPage,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                beforeSend: function() {
+                    // Show loading indicator
+                    $('#all-products-container').append('<div class="col-12 text-center py-4 loading-indicator"><i class="las la-spinner la-spin la-2x"></i><br>Loading more products...</div>');
+                },
+                success: function(response) {
+                    console.log('All Products AJAX Success:', response);
+                    $('.loading-indicator').remove();
+                    
+                    if (response.products && response.products.length > 0) {
+                        // Append new products to the grid
+                        response.products.forEach(function(productHtml) {
+                            let productElement = '<div class="col border-right border-bottom has-transition hov-shadow-out z-1">' + productHtml + '</div>';
+                            $('#all-products-container').append(productElement);
+                        });
+                        
+                        // Update last page info
+                        allProductsLastPage = response.last_page || allProductsLastPage;
+                    } else {
+                        // No more products
+                        allProductsPage = allProductsLastPage;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('All Products AJAX Error:', xhr.responseText, status, error);
+                    $('.loading-indicator').remove();
+                    allProductsPage--; // Reset page number on error
+                },
+                complete: function() {
+                    allProductsLoading = false;
+                }
+            });
+        }
+        
+        $(document).ready(function() {
+            console.log('Store Home - All Products container found:', $('#all-products-container').length);
+            
+            // Manual load more button
+            $('#load-more-all-products').on('click', function() {
+                loadMoreAllProducts();
+            });
+            
+            // Infinite scroll detection for All Products section
+            $(window).scroll(function() {
+                let scrollTop = $(window).scrollTop();
+                let windowHeight = $(window).height();
+                let documentHeight = $(document).height();
+                let scrollPercentage = (scrollTop + windowHeight) / documentHeight;
+                
+                if (scrollPercentage >= 0.8) {
+                    console.log('Store Home scroll triggered at', Math.round(scrollPercentage * 100) + '%, loading all products...');
+                    loadMoreAllProducts();
                 }
             });
         });
