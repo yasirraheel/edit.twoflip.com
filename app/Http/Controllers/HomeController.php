@@ -468,6 +468,20 @@ class HomeController extends Controller
 
                 $products = $products->paginate(24)->appends(request()->query());
 
+                // Handle AJAX requests for infinite scroll
+                if ($request->ajax()) {
+                    $productHtml = [];
+                    foreach ($products as $product) {
+                        $productHtml[] = view('frontend.'.get_setting('homepage_select').'.partials.product_box_1', compact('product'))->render();
+                    }
+                    return response()->json([
+                        'products' => $productHtml,
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'has_more' => $products->hasMorePages()
+                    ]);
+                }
+
                 return view('frontend.seller_shop', compact('shop', 'type', 'products', 'selected_categories', 'min_price', 'max_price', 'brand_id', 'sort_by', 'rating'));
             }
 
@@ -548,7 +562,45 @@ class HomeController extends Controller
 
                 $products = $products->paginate(24)->appends(request()->query());
 
+                // Handle AJAX requests for infinite scroll (preorder products)
+                if ($request->ajax()) {
+                    $productHtml = [];
+                    foreach ($products as $product) {
+                        $productHtml[] = view('preorder.frontend.product_box3', compact('product'))->render();
+                    }
+                    return response()->json([
+                        'products' => $productHtml,
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'has_more' => $products->hasMorePages()
+                    ]);
+                }
+
                 return view('frontend.seller_shop', compact('shop', 'type', 'products', 'selected_categories', 'min_price', 'max_price', 'brand_id', 'sort_by', 'rating','is_available'));
+            }
+
+            if ($type == 'top-selling') {
+                $products = \App\Product::where('user_id', $shop->user->id)
+                    ->where('published', 1)
+                    ->where('approved', 1)
+                    ->orderByRaw('(num_of_sale * rating) DESC')
+                    ->paginate(24)->appends(request()->query());
+
+                // Handle AJAX requests for infinite scroll (top-selling products)
+                if ($request->ajax()) {
+                    $productHtml = [];
+                    foreach ($products as $product) {
+                        $productHtml[] = view('frontend.'.get_setting('homepage_select').'.partials.product_box_1', compact('product'))->render();
+                    }
+                    return response()->json([
+                        'products' => $productHtml,
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'has_more' => $products->hasMorePages()
+                    ]);
+                }
+
+                return view('frontend.seller_shop', compact('shop', 'type', 'products'));
             }
 
             return view('frontend.seller_shop', compact('shop', 'type'));
