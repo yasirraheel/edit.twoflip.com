@@ -421,7 +421,7 @@ class HomeController extends Controller
                 $sort_by = $request->sort_by;
                 $min_price = $request->min_price;
                 $max_price = $request->max_price;
-                $selected_categories = array();
+                $selected_categories = $request->selected_categories ?? [];
                 $brand_id = null;
                 $rating = null;
 
