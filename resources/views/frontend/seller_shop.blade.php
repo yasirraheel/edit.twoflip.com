@@ -655,10 +655,6 @@
                             <div class="aiz-pagination mt-4">
                                 {{ $products->appends(request()->input())->links() }}
                             </div>
-                            <!-- Temporary Load More Button for Testing -->
-                            <div class="text-center mt-3">
-                                <button id="load-more-btn" class="btn btn-primary" onclick="loadMoreSellerProducts()">Load More Products (Test)</button>
-                            </div>
                         </div>
                     </div>
                 </form>
@@ -912,10 +908,9 @@
             console.log('DOM Ready - Products container found:', $('.products-container').length);
             console.log('Pagination elements found:', $('.aiz-pagination').length);
             
-            // Hide default pagination and show test button
+            // Hide default pagination
             $('.aiz-pagination').hide();
-            $('#load-more-btn').show();
-            console.log('Pagination hidden, test button shown');
+            console.log('Pagination hidden');
             
             // Scroll detection for infinite loading
             $(window).scroll(function() {
