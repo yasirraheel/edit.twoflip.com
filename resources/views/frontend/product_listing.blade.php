@@ -1093,11 +1093,24 @@
                 let category_id = <?php echo $category_id ?? 'null'; ?>;
                 let brand_id = <?php echo $brand_id ?? 'null'; ?>;
                 
+                // For category pages, ensure the category is included in the request
                 if (category_id !== null && category_id !== 0 && category_id !== undefined) {
                     formData += '&categories[]=' + category_id;
+                    // Also add category_id for proper routing
+                    formData += '&category_id=' + category_id;
                 }
                 if (brand_id !== null && brand_id !== 0 && brand_id !== undefined) {
                     formData += "&brand_id=" + brand_id;
+                }
+                
+                // Check if we're on a category page URL and extract category info from URL
+                const currentPath = window.location.pathname;
+                if (currentPath.startsWith('/category/') && !category_id) {
+                    // Extract category slug from URL and pass it
+                    const categorySlug = currentPath.split('/category/')[1];
+                    if (categorySlug) {
+                        formData += '&category_slug=' + encodeURIComponent(categorySlug);
+                    }
                 }
                 
                 $.ajax({

@@ -304,6 +304,19 @@ class SearchController extends Controller
 
     public function index2(Request $request, $category_id = null, $brand_id = null)
     {
+        // Handle category slug from AJAX requests (for category pages)
+        if ($request->has('category_slug') && !$category_id) {
+            $category = Category::where('slug', $request->category_slug)->first();
+            if ($category) {
+                $category_id = $category->id;
+            }
+        }
+        
+        // Handle category_id from request
+        if ($request->has('category_id') && !$category_id) {
+            $category_id = $request->category_id;
+        }
+        
         // dd($request->all());
         // return $request->all();
         $category_list = $request->categories ?? [];
@@ -312,6 +325,11 @@ class SearchController extends Controller
             return isset($matches[0]) ? (int)$matches[0] : null;
         }, $category_list);
         $category_list = array_filter($category_ids, fn($v) => $v !== null);
+        
+        // Add the single category_id to category_list for category page filtering
+        if ($category_id && !in_array($category_id, $category_list)) {
+            $category_list[] = $category_id;
+        }
 
         $category_list_preorder = $request->categories_preorder ?? [];
         $category_ids2 = array_map(function ($str) {
