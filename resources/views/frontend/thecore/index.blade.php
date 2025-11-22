@@ -823,8 +823,8 @@
                 const windowHeight = $(window).height();
                 const docHeight = $(document).height();
                 
-                // Trigger when 300px from bottom
-                if (scrollTop + windowHeight >= docHeight - 300) {
+                // Trigger when 800px from bottom (before footer)
+                if (scrollTop + windowHeight >= docHeight - 800) {
                     loadMoreProducts();
                 }
             }
