@@ -16,15 +16,15 @@
                 src="{{ get_image($product->thumbnail) }}"
                 alt="{{ $product->getTranslation('name') }}"
                 title="{{ $product->getTranslation('name') }}"
-                style="height: 180px; object-fit: cover;"
-                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">
-            <img
+                style="height: 180px; object-fit: contain;"
+                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">            
+<img
                 class="lazyload w-100 product-hover-image position-absolute top-0 left-0 has-transition opacity-0"
                 src="{{ get_first_product_image($product->thumbnail, $product->photos) }}"
                 alt="{{ $product->getTranslation('name') }}"
                 title="{{ $product->getTranslation('name') }}"
-                style="height: 180px; object-fit: cover;"
-                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">
+                style="height: 180px; object-fit: contain;"
+                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">            
         </a>
         
         <!-- Badges Container -->
@@ -135,9 +135,9 @@
     </div>
 
     <!-- Product Details -->
-    <div class="product-info p-2">
+    <div class="product-info px-2 py-1">
         <!-- Product name -->
-        <h3 class="fs-12 fw-500 text-truncate-2 lh-1-3 mb-1" style="height: 32px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+        <h3 class="fs-12 fw-500 text-truncate-2 lh-1-3 mb-1" style="height: 30px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
             <a href="{{ $product_url }}" class="text-reset text-decoration-none"
                 title="{{ $product->getTranslation('name') }}">{{ $product->getTranslation('name') }}</a>
         </h3>
