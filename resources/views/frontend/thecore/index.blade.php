@@ -467,6 +467,18 @@
 <!-- New Products -->
 <div id="section_newest">
 </div>
+
+<!-- Infinite Scroll Loading Indicator -->
+<div class="text-center py-4 d-none" id="infinite-loading">
+    <div class="d-inline-flex align-items-center px-4 py-2 bg-white shadow-sm rounded-pill">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <span class="fs-14 text-muted">{{ translate('Loading more products...') }}</span>
+    </div>
+</div>
+
+<!-- Manual Load More Button (hidden by default) -->
 <div class="text-center d-none" id="view-more-container">
     <button type="button" class="btn btn-lg py-19px w-20 bg-light fs-16 my-32px" id="view-more-btn">
         {{ translate('Load More') }}
@@ -668,6 +680,26 @@
         max-width: 16.666667% !important;
     }
 }
+
+/* Loading indicator styles */
+#infinite-loading {
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.1em;
+}
+
+/* Ensure consistent product wrapper spacing */
+.edge-product-wrapper {
+    padding: 0 !important;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-width: 0 0.5px 1px 0;
+}
 </style>
 <script>
     // Countdown for mobile view
@@ -717,51 +749,92 @@
         if (isLoading || !hasMoreProducts) return;
         
         isLoading = true;
-        const $button = $('#view-more-btn');
-        const originalText = $button.html(); 
+        
+        // Show loading indicator
+        $('#infinite-loading').removeClass('d-none');
         
         page++;
-        $button.html('{{ translate("Loading...") }} <i id="spinner-icon" class="las la-lg la-spinner la-spin"></i>');
-        $button.prop('disabled', true); 
 
         $.post('{{ route('home.section.newest_products') }}', {
             _token: '{{ csrf_token() }}',
             page: page
         }, function(data) {
-            isLoading = false;
-            $button.prop('disabled', false);
-            $button.html(originalText);
+            // Hide loading indicator
+            $('#infinite-loading').addClass('d-none');
             
             if ($.trim(data) === '') {
                 hasMoreProducts = false;
-                $button.prop('disabled', true).text('{{ translate("No More Products") }}');
+                // Show "No more products" message briefly
+                $('#infinite-loading').find('span').text('{{ translate("No more products to load") }}');
+                $('#infinite-loading').find('.spinner-border').hide();
+                $('#infinite-loading').removeClass('d-none').delay(2000).fadeOut();
             } else {
-                // Parse new data and ensure proper column structure
+                // Parse the AJAX response properly
                 const $tempContainer = $('<div>').html(data);
-                const $newProducts = $tempContainer.find('.edge-product-wrapper, .col-md-3, .col-lg-3, .col-xl-2, .col-sm-4, .col-6');
                 
-                // Fix column classes for proper mobile layout
-                $newProducts.each(function() {
-                    const $this = $(this);
-                    $this.removeClass().addClass('col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2 edge-product-wrapper');
+                // Look for the products section in the response
+                let $productsSection = $tempContainer.find('#newest-products-list');
+                
+                if ($productsSection.length === 0) {
+                    // If no section found, look for individual product wrappers
+                    $productsSection = $tempContainer.find('.edge-product-wrapper, .carousel-box');
+                } else {
+                    // Get the products from within the section
+                    $productsSection = $productsSection.find('.edge-product-wrapper, > div');
+                }
+                
+                if ($productsSection.length === 0) {
+                    // Fallback: look for any product containers
+                    $productsSection = $tempContainer.find('div[class*="col-"]');
+                }
+                
+                // Process each product to ensure proper wrapper structure
+                $productsSection.each(function() {
+                    const $product = $(this);
+                    
+                    // If it's not already wrapped properly, wrap it
+                    if (!$product.hasClass('edge-product-wrapper')) {
+                        // Extract the product content
+                        const productContent = $product.html();
+                        
+                        // Create new properly structured wrapper
+                        const $newWrapper = $('<div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2 edge-product-wrapper"></div>');
+                        $newWrapper.html(productContent);
+                        
+                        // Append to products list
+                        $('#newest-products-list').append($newWrapper);
+                    } else {
+                        // Ensure proper classes
+                        $product.removeClass().addClass('col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2 edge-product-wrapper');
+                        $('#newest-products-list').append($product);
+                    }
                 });
-                
-                $('#newest-products-list').append($newProducts);
                 
                 // Force layout recalculation
                 setTimeout(function() {
                     $('#newest-products-list').css('display', 'flex').css('flex-wrap', 'wrap');
                     $('#newest-products-list')[0].offsetHeight; // Trigger reflow
-                }, 10);
+                }, 50);
                 
+                // Reinitialize any plugins
                 if (typeof AIZ !== 'undefined' && AIZ.plugins && AIZ.plugins.slickCarousel) {
                     AIZ.plugins.slickCarousel();
                 }
             }
+            
+            isLoading = false;
         }).fail(function() {
             isLoading = false;
-            $button.prop('disabled', false);
-            $button.html('{{ translate("Error, Try Again") }} <i id="spinner-icon" class="las la-lg la-spinner la-spin d-none"></i>');
+            $('#infinite-loading').addClass('d-none');
+            
+            // Show error message
+            $('#infinite-loading').find('span').text('{{ translate("Error loading products. Scroll to try again.") }}');
+            $('#infinite-loading').find('.spinner-border').hide();
+            $('#infinite-loading').removeClass('d-none').delay(3000).fadeOut(function() {
+                // Reset loading indicator
+                $(this).find('span').text('{{ translate("Loading more products...") }}');
+                $(this).find('.spinner-border').show();
+            });
         });
     }
     
@@ -770,15 +843,22 @@
         loadMoreProducts();
     });
     
-    // Infinite scroll implementation
+    // Infinite scroll implementation with improved detection
     $(window).scroll(function() {
-        // Check if user has scrolled near the bottom of the newest products section
-        if ($('#section_newest').length > 0 && hasMoreProducts && !isLoading) {
-            const sectionBottom = $('#section_newest').offset().top + $('#section_newest').outerHeight();
+        if (hasMoreProducts && !isLoading) {
             const scrollPosition = $(window).scrollTop() + $(window).height();
-            const threshold = 200; // Load more when 200px before reaching the section bottom
+            const documentHeight = $(document).height();
+            const threshold = 500; // Load when 500px from bottom
             
-            if (scrollPosition >= sectionBottom - threshold) {
+            // Also check if products section exists and is visible
+            const $productsSection = $('#section_newest');
+            if ($productsSection.length > 0 && $productsSection.is(':visible')) {
+                const sectionBottom = $productsSection.offset().top + $productsSection.outerHeight();
+                
+                if (scrollPosition >= sectionBottom - threshold || scrollPosition >= documentHeight - threshold) {
+                    loadMoreProducts();
+                }
+            } else if (scrollPosition >= documentHeight - threshold) {
                 loadMoreProducts();
             }
         }
@@ -796,17 +876,22 @@
         }
     }
     
-    // Infinite scroll for thecore template
+    // Initialize infinite scroll for thecore template
     $(document).ready(function() {
-        // Hide the manual load more button
-        $('#view-more-btn').hide();
+        // Hide the manual load more button since we're using infinite scroll
+        $('#view-more-container').hide();
         
-        // Add scroll detection for infinite loading
-        $(window).scroll(function() {
-            if ($(window).scrollTop() + $(window).height() >= $(document).height() - 500) {
-                loadMoreProducts();
-            }
+        // Ensure products list has proper flex layout
+        $('#newest-products-list').css({
+            'display': 'flex',
+            'flex-wrap': 'wrap',
+            'margin': '0'
         });
+        
+        // Initialize tooltips if available
+        if (typeof $().tooltip === 'function') {
+            $('[data-toggle="tooltip"]').tooltip();
+        }
     });
 
 </script>
