@@ -1200,6 +1200,43 @@
             font-size: 16px;
             color: #666;
         }
+        
+        /* Fix mobile layout alignment for infinite scroll products */
+        #infinite-products-grid {
+            margin: 0 !important;
+        }
+        
+        #infinite-products-grid .col-6 {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+            margin-bottom: 12px !important;
+        }
+        
+        #infinite-products-grid .aiz-card-box {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Ensure consistent heights on mobile */
+        @media (max-width: 575px) {
+            #infinite-products-grid .col-6 {
+                padding-left: 2px !important;
+                padding-right: 2px !important;
+            }
+            
+            #infinite-products-grid .aiz-card-box {
+                min-height: 280px;
+            }
+        }
+        
+        /* Better spacing for larger screens */
+        @media (min-width: 576px) {
+            #infinite-products-grid .col-sm-6 {
+                padding-left: 6px !important;
+                padding-right: 6px !important;
+            }
+        }
     </style>
 
     <!-- Universal Infinite Scroll for Home Page Load More -->
@@ -1230,18 +1267,20 @@
                         // Extract products from carousel
                         const products = carousel.find('.carousel-box').clone();
                         
-                        // Create a new grid container
+                        // Create a new grid container with better mobile layout
                         const gridContainer = $(`
-                            <div class="container">
-                                <div class="row" id="infinite-products-grid">
+                            <div class="container-fluid px-3">
+                                <div class="row mx-0" id="infinite-products-grid" style="min-height: 200px;">
                                 </div>
                             </div>
                         `);
                         
-                        // Add products to grid
-                        products.each(function() {
+                        // Add products to grid with better mobile layout
+                        products.each(function(index) {
                             const $this = $(this);
-                            $this.removeClass('carousel-box px-3').addClass('col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3');
+                            $this.removeClass('carousel-box px-3 position-relative has-transition hov-animate-outline border-right border-top border-bottom border-left')
+                                 .addClass('col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3 px-1')
+                                 .attr('data-product-index', index);
                             gridContainer.find('#infinite-products-grid').append($this);
                         });
                         
@@ -1304,15 +1343,40 @@
                                             convertToGrid();
                                         }
                                         
-                                        // Parse the new products and add them to grid
+                                        // Parse the new products and add them to grid with duplicate prevention
                                         const tempDiv = $('<div>').html(data);
                                         const newProducts = tempDiv.find('.carousel-box');
+                                        const existingProductIds = new Set();
                                         
-                                        newProducts.each(function() {
-                                            const $this = $(this);
-                                            $this.removeClass('carousel-box px-3').addClass('col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3');
-                                            $('#infinite-products-grid').append($this);
+                                        // Get existing product IDs to prevent duplicates
+                                        $('#infinite-products-grid .carousel-box, #infinite-products-grid [data-product-id]').each(function() {
+                                            const productId = $(this).attr('data-product-id') || $(this).find('[data-product-id]').attr('data-product-id');
+                                            if (productId) existingProductIds.add(productId);
                                         });
+                                        
+                                        let addedCount = 0;
+                                        newProducts.each(function(index) {
+                                            const $this = $(this);
+                                            const productId = $this.attr('data-product-id') || $this.find('[data-product-id]').attr('data-product-id');
+                                            
+                                            // Only add if not duplicate
+                                            if (!productId || !existingProductIds.has(productId)) {
+                                                $this.removeClass('carousel-box px-3 position-relative has-transition hov-animate-outline border-right border-top border-bottom border-left')
+                                                     .addClass('col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3 px-1')
+                                                     .attr('data-product-index', $('#infinite-products-grid').children().length + addedCount);
+                                                if (productId) $this.attr('data-product-id', productId);
+                                                $('#infinite-products-grid').append($this);
+                                                addedCount++;
+                                            }
+                                        });
+                                        
+                                        // If no new products were added, stop loading more
+                                        if (addedCount === 0) {
+                                            hasMoreHomeProducts = false;
+                                            if (loadingIndicator.length > 0) {
+                                                loadingIndicator.html('<p class="text-muted">{{ translate("No more products to load") }}</p>');
+                                            }
+                                        }
                                     }
                                     
                                     // Hide loading indicator
