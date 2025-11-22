@@ -16,35 +16,37 @@
                 src="{{ get_image($product->thumbnail) }}"
                 alt="{{ $product->getTranslation('name') }}"
                 title="{{ $product->getTranslation('name') }}"
-                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';"
-            <img
-                class="lazyload mx-auto img-fit rounded-2 has-transition product-hover-image position-absolute"
+                style="height: 180px; object-fit: cover;"
+                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">            <img
+                class="lazyload w-100 product-hover-image position-absolute top-0 left-0 has-transition opacity-0"
                 src="{{ get_first_product_image($product->thumbnail, $product->photos) }}"
                 alt="{{ $product->getTranslation('name') }}"
                 title="{{ $product->getTranslation('name') }}"
-                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">
+                style="height: 180px; object-fit: cover;"
+                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';
         </a>
-        @php
-            $badgeIndex = 0;
-        @endphp
+        
+        <!-- Badges Container -->
+        <div class="position-absolute" style="top: 8px; left: 8px; z-index: 2;">
+            @php $badgeIndex = 0; @endphp
+            
+            <!-- Discount percentage tag -->
+            @if (discount_in_percentage($product) > 0)
+                <span class="badge bg-danger text-white px-2 py-1 fs-10 fw-600 mb-1 d-block"
+                    style="border-radius: 12px; margin-bottom: 4px;">
+                    -{{ discount_in_percentage($product) }}%
+                </span>
+                @php $badgeIndex++; @endphp
+            @endif
 
-        <!-- Discount percentage tag -->
-        @if (discount_in_percentage($product) > 0)
-            <span class="absolute-top-left rounded rounded-4 bg-primary ml-1 mt-1 fs-11 fw-700 text-white w-35px text-center"
-                style="padding-top:2px; padding-bottom:2px; top:{{ 25 * $badgeIndex }}px;">
-                -{{ discount_in_percentage($product) }}%
-            </span>
-            @php $badgeIndex++; @endphp
-        @endif
-
-        <!-- Wholesale tag -->
-        @if ($product->wholesale_product)
-            <span class="absolute-top-left rounded rounded-4 fs-11 text-white fw-700 px-2 lh-1-8 ml-1 mt-1"
-                style="background-color:#455a64; top:{{ 25 * $badgeIndex }}px;">
-                {{ translate('Wholesale') }}
-            </span>
-            @php $badgeIndex++; @endphp
-        @endif
+            <!-- Wholesale tag -->
+            @if ($product->wholesale_product)
+                <span class="badge text-white px-2 py-1 fs-10 fw-600 mb-1 d-block"
+                    style="background-color:#455a64; border-radius: 12px; margin-bottom: 4px;">
+                    {{ translate('Wholesale') }}
+                </span>
+                @php $badgeIndex++; @endphp
+            @endif
 
             <!-- Custom Labels -->
             @php
