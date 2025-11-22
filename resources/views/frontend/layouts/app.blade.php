@@ -23,6 +23,12 @@
     <meta name="robots" content="index, follow">
     <meta name="description" content="@yield('meta_description', get_setting('meta_description'))" />
     <meta name="keywords" content="@yield('meta_keywords', get_setting('meta_keywords'))">
+    
+    <!-- Performance Optimization -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
 
     @yield('meta')
 

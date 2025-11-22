@@ -29,9 +29,10 @@
                     <div class="carousel-box">
                         <a href="{{ isset(json_decode($home_slider_links, true)[$key]) ? json_decode($home_slider_links, true)[$key] : '' }}">
                             <div class="thecore-square-box overflow-hidden h-400px h-xl-500px h-xxl-516px">
-                                <img class="img-fluid rounded-75 border border-light h-100"
-                                    src="{{ $slider ? my_asset($slider->file_name) : static_asset('assets/img/placeholder.jpg') }}"
+                                <img class="img-fluid rounded-75 border border-light h-100 {{ $key > 0 ? 'lazyload' : '' }}"
+                                    {{ $key === 0 ? 'src' : 'data-src' }}="{{ $slider ? my_asset($slider->file_name) : static_asset('assets/img/placeholder.jpg') }}"
                                     alt="{{ env('APP_NAME') }} promo"
+                                    {{ $key > 0 ? 'loading="lazy"' : '' }}
                                     onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder-rect.jpg') }}';">
                             </div>
                         </a>
@@ -113,6 +114,7 @@
                                         src="{{ static_asset('assets/img/placeholder.jpg') }}"
                                         data-src="{{ isset($category->banner) ? uploaded_asset($category->banner) : static_asset('assets/img/placeholder.jpg') }}"
                                         alt="{{ $category_name }}"
+                                        loading="lazy"
                                         onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">
                                     </a>
                                 </div>
@@ -485,6 +487,23 @@
 
 @section('script')
 <style>
+/* Critical CSS - inline for faster rendering */
+.edge-product-wrapper {
+    border: 1px solid rgba(0,0,0,0.05);
+    border-width: 0 0.5px 1px 0;
+    position: relative;
+}
+
+.product-image-container {
+    position: relative;
+    height: 180px;
+    background: #f8f9fa;
+}
+
+#infinite-loading {
+    padding: 20px 0;
+}
+
 /* Edge-to-edge product card design */
 .edge-to-edge-section {
     margin-left: calc(-50vw + 50%);

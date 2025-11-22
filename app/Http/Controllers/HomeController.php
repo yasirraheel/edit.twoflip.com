@@ -78,13 +78,16 @@ class HomeController extends Controller
             $offset = ($page - 1) * $limit;
 
             $newest_products = filter_products(Product::latest())
+                ->select('id', 'name', 'slug', 'thumbnail', 'unit_price', 'discount', 'discount_type', 'colors', 'attributes', 'auction_product', 'auction_start_date', 'auction_end_date', 'starting_bid', 'wholesale_product', 'custom_label_id', 'photos', 'user_id', 'category_id')
                 ->skip($offset)
                 ->take($limit)
                 ->get();
             return view('frontend.' . get_setting('homepage_select') . '.partials.newest_products_section', compact('newest_products'));
         }
         $newest_products = Cache::remember('newest_products', 3600, function () use ($limit) {
-            return filter_products(Product::latest())->take($limit)->get();
+            return filter_products(Product::latest())
+                ->select('id', 'name', 'slug', 'thumbnail', 'unit_price', 'discount', 'discount_type', 'colors', 'attributes', 'auction_product', 'auction_start_date', 'auction_end_date', 'starting_bid', 'wholesale_product', 'custom_label_id', 'photos', 'user_id', 'category_id')
+                ->take($limit)->get();
         });
 
         return view('frontend.' . get_setting('homepage_select') . '.partials.newest_products_section', compact('newest_products'));
