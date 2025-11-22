@@ -477,6 +477,71 @@
 @endsection
 
 @section('script')
+<style>
+/* Fix thecore grid layout for infinite scroll */
+#newest-products-list {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin: 0 !important;
+}
+
+#newest-products-list > .col-6 {
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+    padding: 2px !important;
+}
+
+#newest-products-list > .col-sm-4 {
+    flex: 0 0 33.333333% !important;
+    max-width: 33.333333% !important;
+}
+
+#newest-products-list > .col-xl-2 {
+    flex: 0 0 16.666667% !important;
+    max-width: 16.666667% !important;
+}
+
+@media (max-width: 575px) {
+    #newest-products-list > .col-6 {
+        width: 50% !important;
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding: 1px !important;
+    }
+}
+
+@media (min-width: 576px) {
+    #newest-products-list > .col-sm-4 {
+        width: 33.333333% !important;
+        flex: 0 0 33.333333% !important;
+        max-width: 33.333333% !important;
+    }
+}
+
+@media (min-width: 768px) {
+    #newest-products-list > .col-md-3 {
+        width: 25% !important;
+        flex: 0 0 25% !important;
+        max-width: 25% !important;
+    }
+}
+
+@media (min-width: 992px) {
+    #newest-products-list > .col-lg-3 {
+        width: 25% !important;
+        flex: 0 0 25% !important;
+        max-width: 25% !important;
+    }
+}
+
+@media (min-width: 1200px) {
+    #newest-products-list > .col-xl-2 {
+        width: 16.666667% !important;
+        flex: 0 0 16.666667% !important;
+        max-width: 16.666667% !important;
+    }
+}
+</style>
 <script>
     // Countdown for mobile view
     function startSimpleCountdown(endDate) {
@@ -544,8 +609,27 @@
                 hasMoreProducts = false;
                 $button.prop('disabled', true).text('{{ translate("No More Products") }}');
             } else {
-                $('#newest-products-list').append(data);
-                AIZ.plugins.slickCarousel();
+                // Parse new data and ensure proper column structure
+                const $tempContainer = $('<div>').html(data);
+                const $newProducts = $tempContainer.find('.col-md-3, .col-lg-3, .col-xl-2, .col-sm-4, .col-6');
+                
+                // Fix column classes for proper mobile layout
+                $newProducts.each(function() {
+                    const $this = $(this);
+                    $this.removeClass().addClass('col-md-3 col-lg-3 col-xl-2 col-sm-4 col-6 d-flex product-card hov-animate-outline-2 d-flex justify-content-center mx-auto');
+                });
+                
+                $('#newest-products-list').append($newProducts);
+                
+                // Force layout recalculation
+                setTimeout(function() {
+                    $('#newest-products-list').css('display', 'flex').css('flex-wrap', 'wrap');
+                    $('#newest-products-list')[0].offsetHeight; // Trigger reflow
+                }, 10);
+                
+                if (typeof AIZ !== 'undefined' && AIZ.plugins && AIZ.plugins.slickCarousel) {
+                    AIZ.plugins.slickCarousel();
+                }
             }
         }).fail(function() {
             isLoading = false;
@@ -584,6 +668,19 @@
             $('#view-more-container').removeClass('d-block').addClass('d-none');
         }
     }
+    
+    // Infinite scroll for thecore template
+    $(document).ready(function() {
+        // Hide the manual load more button
+        $('#view-more-btn').hide();
+        
+        // Add scroll detection for infinite loading
+        $(window).scroll(function() {
+            if ($(window).scrollTop() + $(window).height() >= $(document).height() - 500) {
+                loadMoreProducts();
+            }
+        });
+    });
 
 </script>
 @endsection

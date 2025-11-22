@@ -1272,8 +1272,9 @@
     <!-- Universal Infinite Scroll for Home Page Load More -->
     <script>
         $(document).ready(function() {
-            // Only run on home page
-            if (window.location.pathname === '/' || window.location.pathname === '/home') {
+            // Only run on home page and not for thecore template (thecore has its own implementation)
+            if ((window.location.pathname === '/' || window.location.pathname === '/home') && 
+                !$('#newest-products-list').length) {
                 let isHomePageLoading = false;
                 let homePageNumber = 1;
                 let hasMoreHomeProducts = true;
