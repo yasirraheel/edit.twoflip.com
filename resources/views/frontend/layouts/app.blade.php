@@ -1204,25 +1204,30 @@
         /* Fix mobile layout alignment for infinite scroll products */
         #infinite-products-grid {
             margin: 0 !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
         }
         
-        #infinite-products-grid .col-6 {
-            padding-left: 4px !important;
-            padding-right: 4px !important;
-            margin-bottom: 12px !important;
+        #infinite-products-grid > div {
+            padding: 2px !important;
+            box-sizing: border-box;
+            flex: 0 0 auto;
         }
         
         #infinite-products-grid .aiz-card-box {
             height: 100%;
             display: flex;
             flex-direction: column;
+            width: 100%;
         }
         
-        /* Ensure consistent heights on mobile */
+        /* Mobile specific fixes */
         @media (max-width: 575px) {
-            #infinite-products-grid .col-6 {
-                padding-left: 2px !important;
-                padding-right: 2px !important;
+            #infinite-products-grid > div.col-6 {
+                width: 50% !important;
+                max-width: 50% !important;
+                flex: 0 0 50%;
+                padding: 1px !important;
             }
             
             #infinite-products-grid .aiz-card-box {
@@ -1230,11 +1235,36 @@
             }
         }
         
-        /* Better spacing for larger screens */
+        /* Tablet and up */
         @media (min-width: 576px) {
-            #infinite-products-grid .col-sm-6 {
-                padding-left: 6px !important;
-                padding-right: 6px !important;
+            #infinite-products-grid > div.col-sm-6 {
+                width: 50% !important;
+                max-width: 50% !important;
+                flex: 0 0 50%;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            #infinite-products-grid > div.col-md-4 {
+                width: 33.333333% !important;
+                max-width: 33.333333% !important;
+                flex: 0 0 33.333333%;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            #infinite-products-grid > div.col-lg-3 {
+                width: 25% !important;
+                max-width: 25% !important;
+                flex: 0 0 25%;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            #infinite-products-grid > div.col-xl-2 {
+                width: 16.666667% !important;
+                max-width: 16.666667% !important;
+                flex: 0 0 16.666667%;
             }
         }
     </style>
@@ -1267,21 +1297,24 @@
                         // Extract products from carousel
                         const products = carousel.find('.carousel-box').clone();
                         
-                        // Create a new grid container with better mobile layout
+                        // Create a new grid container with proper Bootstrap structure
                         const gridContainer = $(`
-                            <div class="container-fluid px-3">
-                                <div class="row mx-0" id="infinite-products-grid" style="min-height: 200px;">
+                            <div class="px-3">
+                                <div class="row" id="infinite-products-grid" style="display: flex; flex-wrap: wrap; margin: 0;">
                                 </div>
                             </div>
                         `);
                         
-                        // Add products to grid with better mobile layout
+                        // Add products to grid with fixed mobile layout
                         products.each(function(index) {
                             const $this = $(this);
+                            // Wrap in proper column structure
+                            const productWrapper = $('<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3" style="padding: 2px;"></div>');
                             $this.removeClass('carousel-box px-3 position-relative has-transition hov-animate-outline border-right border-top border-bottom border-left')
-                                 .addClass('col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3 px-1')
+                                 .addClass('w-100')
                                  .attr('data-product-index', index);
-                            gridContainer.find('#infinite-products-grid').append($this);
+                            productWrapper.append($this);
+                            gridContainer.find('#infinite-products-grid').append(productWrapper);
                         });
                         
                         // Replace carousel with grid
@@ -1361,11 +1394,14 @@
                                             
                                             // Only add if not duplicate
                                             if (!productId || !existingProductIds.has(productId)) {
+                                                // Wrap in proper column structure for AJAX products
+                                                const productWrapper = $('<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3" style="padding: 2px;"></div>');
                                                 $this.removeClass('carousel-box px-3 position-relative has-transition hov-animate-outline border-right border-top border-bottom border-left')
-                                                     .addClass('col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3 px-1')
+                                                     .addClass('w-100')
                                                      .attr('data-product-index', $('#infinite-products-grid').children().length + addedCount);
                                                 if (productId) $this.attr('data-product-id', productId);
-                                                $('#infinite-products-grid').append($this);
+                                                productWrapper.append($this);
+                                                $('#infinite-products-grid').append(productWrapper);
                                                 addedCount++;
                                             }
                                         });
@@ -1376,6 +1412,13 @@
                                             if (loadingIndicator.length > 0) {
                                                 loadingIndicator.html('<p class="text-muted">{{ translate("No more products to load") }}</p>');
                                             }
+                                        } else {
+                                            // Force layout recalculation after adding new products
+                                            setTimeout(function() {
+                                                $('#infinite-products-grid').css('display', 'flex').css('flex-wrap', 'wrap');
+                                                // Trigger a reflow
+                                                $('#infinite-products-grid')[0].offsetHeight;
+                                            }, 50);
                                         }
                                     }
                                     
