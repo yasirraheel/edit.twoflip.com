@@ -469,21 +469,16 @@
 </div>
 
 <!-- Infinite Scroll Loading Indicator -->
-<div class="text-center py-4 d-none" id="infinite-loading">
-    <div class="d-inline-flex align-items-center px-4 py-2 bg-white shadow-sm rounded-pill">
-        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <span class="fs-14 text-muted">{{ translate('Loading more products...') }}</span>
+<div class="text-center py-3 d-none" id="infinite-loading">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
     </div>
+    <p class="mt-2 text-muted fs-14">{{ translate('Loading more products...') }}</p>
 </div>
 
-<!-- Manual Load More Button (hidden by default) -->
-<div class="text-center d-none" id="view-more-container">
-    <button type="button" class="btn btn-lg py-19px w-20 bg-light fs-16 my-32px" id="view-more-btn">
-        {{ translate('Load More') }}
-        <i id="spinner-icon" class="las la-lg la-spinner la-spin d-none"></i>
-    </button>
+<!-- No More Products Message -->
+<div class="text-center py-3 d-none" id="no-more-products">
+    <p class="text-muted fs-14">{{ translate('No more products to load') }}</p>
 </div>
 
 @endsection
@@ -681,24 +676,19 @@
     }
 }
 
-/* Loading indicator styles */
+/* Loading indicator */
 #infinite-loading {
-    position: sticky;
-    bottom: 20px;
-    z-index: 100;
+    padding: 20px 0;
 }
 
-.spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 0.1em;
+#infinite-loading .spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.2em;
 }
 
-/* Ensure consistent product wrapper spacing */
-.edge-product-wrapper {
-    padding: 0 !important;
-    border: 1px solid rgba(0,0,0,0.05);
-    border-width: 0 0.5px 1px 0;
+#no-more-products {
+    padding: 20px 0;
 }
 </style>
 <script>
@@ -749,8 +739,6 @@
         if (isLoading || !hasMoreProducts) return;
         
         isLoading = true;
-        
-        // Show loading indicator
         $('#infinite-loading').removeClass('d-none');
         
         page++;
@@ -759,82 +747,52 @@
             _token: '{{ csrf_token() }}',
             page: page
         }, function(data) {
-            // Hide loading indicator
             $('#infinite-loading').addClass('d-none');
+            isLoading = false;
             
             if ($.trim(data) === '') {
                 hasMoreProducts = false;
-                // Show "No more products" message briefly
-                $('#infinite-loading').find('span').text('{{ translate("No more products to load") }}');
-                $('#infinite-loading').find('.spinner-border').hide();
-                $('#infinite-loading').removeClass('d-none').delay(2000).fadeOut();
-            } else {
-                // Parse the AJAX response properly
-                const $tempContainer = $('<div>').html(data);
-                
-                // Look for the products section in the response
-                let $productsSection = $tempContainer.find('#newest-products-list');
-                
-                if ($productsSection.length === 0) {
-                    // If no section found, look for individual product wrappers
-                    $productsSection = $tempContainer.find('.edge-product-wrapper, .carousel-box');
-                } else {
-                    // Get the products from within the section
-                    $productsSection = $productsSection.find('.edge-product-wrapper, > div');
-                }
-                
-                if ($productsSection.length === 0) {
-                    // Fallback: look for any product containers
-                    $productsSection = $tempContainer.find('div[class*="col-"]');
-                }
-                
-                // Process each product to ensure proper wrapper structure
-                $productsSection.each(function() {
-                    const $product = $(this);
-                    
-                    // If it's not already wrapped properly, wrap it
-                    if (!$product.hasClass('edge-product-wrapper')) {
-                        // Extract the product content
-                        const productContent = $product.html();
-                        
-                        // Create new properly structured wrapper
-                        const $newWrapper = $('<div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2 edge-product-wrapper"></div>');
-                        $newWrapper.html(productContent);
-                        
-                        // Append to products list
-                        $('#newest-products-list').append($newWrapper);
-                    } else {
-                        // Ensure proper classes
-                        $product.removeClass().addClass('col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2 edge-product-wrapper');
-                        $('#newest-products-list').append($product);
-                    }
-                });
-                
-                // Force layout recalculation
-                setTimeout(function() {
-                    $('#newest-products-list').css('display', 'flex').css('flex-wrap', 'wrap');
-                    $('#newest-products-list')[0].offsetHeight; // Trigger reflow
-                }, 50);
-                
-                // Reinitialize any plugins
-                if (typeof AIZ !== 'undefined' && AIZ.plugins && AIZ.plugins.slickCarousel) {
-                    AIZ.plugins.slickCarousel();
-                }
+                $('#no-more-products').removeClass('d-none');
+                return;
             }
             
-            isLoading = false;
-        }).fail(function() {
+            // Parse the response
+            const $response = $('<div>').html(data);
+            
+            // Find the products list container in the response
+            const $newProductsList = $response.find('#newest-products-list');
+            
+            if ($newProductsList.length > 0) {
+                // Extract all product wrappers from the response
+                const $newProducts = $newProductsList.children('.edge-product-wrapper, div[class*="col-"]');
+                
+                if ($newProducts.length > 0) {
+                    // Clone each product and append to main list
+                    $newProducts.each(function() {
+                        const $product = $(this).clone();
+                        // Ensure it has the correct classes
+                        $product.removeClass().addClass('col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2 edge-product-wrapper');
+                        $('#newest-products-list').append($product);
+                    });
+                    
+                    // Reinitialize tooltips if they exist
+                    if (typeof $().tooltip === 'function') {
+                        $('[data-toggle="tooltip"]').tooltip();
+                    }
+                } else {
+                    // No products found in response
+                    hasMoreProducts = false;
+                    $('#no-more-products').removeClass('d-none');
+                }
+            } else {
+                // If no products list found, no more products
+                hasMoreProducts = false;
+                $('#no-more-products').removeClass('d-none');
+            }
+        }).fail(function(xhr, status, error) {
             isLoading = false;
             $('#infinite-loading').addClass('d-none');
-            
-            // Show error message
-            $('#infinite-loading').find('span').text('{{ translate("Error loading products. Scroll to try again.") }}');
-            $('#infinite-loading').find('.spinner-border').hide();
-            $('#infinite-loading').removeClass('d-none').delay(3000).fadeOut(function() {
-                // Reset loading indicator
-                $(this).find('span').text('{{ translate("Loading more products...") }}');
-                $(this).find('.spinner-border').show();
-            });
+            console.error('Failed to load products:', error);
         });
     }
     
@@ -843,25 +801,22 @@
         loadMoreProducts();
     });
     
-    // Infinite scroll implementation with improved detection
+    // Infinite scroll - load when near bottom
+    let scrollTimeout;
     $(window).scroll(function() {
-        if (hasMoreProducts && !isLoading) {
-            const scrollPosition = $(window).scrollTop() + $(window).height();
-            const documentHeight = $(document).height();
-            const threshold = 500; // Load when 500px from bottom
-            
-            // Also check if products section exists and is visible
-            const $productsSection = $('#section_newest');
-            if ($productsSection.length > 0 && $productsSection.is(':visible')) {
-                const sectionBottom = $productsSection.offset().top + $productsSection.outerHeight();
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(function() {
+            if (hasMoreProducts && !isLoading) {
+                const scrollTop = $(window).scrollTop();
+                const windowHeight = $(window).height();
+                const docHeight = $(document).height();
                 
-                if (scrollPosition >= sectionBottom - threshold || scrollPosition >= documentHeight - threshold) {
+                // Trigger when 300px from bottom
+                if (scrollTop + windowHeight >= docHeight - 300) {
                     loadMoreProducts();
                 }
-            } else if (scrollPosition >= documentHeight - threshold) {
-                loadMoreProducts();
             }
-        }
+        }, 100);
     });
 
     $(window).on('load', function() {
@@ -876,19 +831,9 @@
         }
     }
     
-    // Initialize infinite scroll for thecore template
+    // Initialize on page load
     $(document).ready(function() {
-        // Hide the manual load more button since we're using infinite scroll
-        $('#view-more-container').hide();
-        
-        // Ensure products list has proper flex layout
-        $('#newest-products-list').css({
-            'display': 'flex',
-            'flex-wrap': 'wrap',
-            'margin': '0'
-        });
-        
-        // Initialize tooltips if available
+        // Initialize tooltips
         if (typeof $().tooltip === 'function') {
             $('[data-toggle="tooltip"]').tooltip();
         }
