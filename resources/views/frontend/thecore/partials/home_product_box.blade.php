@@ -17,13 +17,14 @@
                 alt="{{ $product->getTranslation('name') }}"
                 title="{{ $product->getTranslation('name') }}"
                 style="height: 180px; object-fit: cover;"
-                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">            <img
+                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">
+            <img
                 class="lazyload w-100 product-hover-image position-absolute top-0 left-0 has-transition opacity-0"
                 src="{{ get_first_product_image($product->thumbnail, $product->photos) }}"
                 alt="{{ $product->getTranslation('name') }}"
                 title="{{ $product->getTranslation('name') }}"
                 style="height: 180px; object-fit: cover;"
-                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';
+                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/placeholder.jpg') }}';">
         </a>
         
         <!-- Badges Container -->
