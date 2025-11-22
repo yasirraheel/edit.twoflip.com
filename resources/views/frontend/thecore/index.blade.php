@@ -536,6 +536,7 @@
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
+    border: 2px solid transparent;
 }
 
 .edge-product-card:hover {
@@ -543,6 +544,17 @@
     transform: translateY(-2px);
     z-index: 10;
     position: relative;
+    border: 2px solid #000;
+    animation: borderPulse 0.3s ease;
+}
+
+@keyframes borderPulse {
+    0% {
+        border-color: transparent;
+    }
+    100% {
+        border-color: #000;
+    }
 }
 
 .product-image-container {
