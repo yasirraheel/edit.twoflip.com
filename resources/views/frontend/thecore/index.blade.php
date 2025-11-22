@@ -791,32 +791,57 @@
             const $response = $('<div>').html(data);
             
             // Find the products list container in the response
-            const $newProductsList = $response.find('#newest-products-list');
+            let $newProductsList = $response.find('#newest-products-list');
+            
+            // If not found, try to find the section container
+            if ($newProductsList.length === 0) {
+                $newProductsList = $response.find('.row');
+            }
             
             if ($newProductsList.length > 0) {
-                // Extract all product wrappers from the response
-                const $newProducts = $newProductsList.children('.edge-product-wrapper, div[class*="col-"]');
+                // Extract all product wrappers from the response - try multiple selectors
+                let $newProducts = $newProductsList.children('.edge-product-wrapper');
+                
+                if ($newProducts.length === 0) {
+                    $newProducts = $newProductsList.children('div[class*="col-"]');
+                }
+                
+                if ($newProducts.length === 0) {
+                    $newProducts = $newProductsList.find('.edge-product-wrapper');
+                }
+                
+                if ($newProducts.length === 0) {
+                    $newProducts = $newProductsList.find('div[class*="col-"]');
+                }
                 
                 if ($newProducts.length > 0) {
                     // Clone each product and append to main list
                     $newProducts.each(function() {
                         const $product = $(this).clone();
                         // Ensure it has the correct classes
-                        $product.removeClass().addClass('col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2 edge-product-wrapper');
+                        if (!$product.hasClass('edge-product-wrapper')) {
+                            $product.addClass('edge-product-wrapper');
+                        }
+                        $product.addClass('col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2');
                         $('#newest-products-list').append($product);
                     });
+                    
+                    // Reinitialize lazyload for new images
+                    if (typeof aiz !== 'undefined' && aiz.plugins && aiz.plugins.lazyload) {
+                        aiz.plugins.lazyload();
+                    }
                     
                     // Reinitialize tooltips if they exist
                     if (typeof $().tooltip === 'function') {
                         $('[data-toggle="tooltip"]').tooltip();
                     }
                 } else {
-                    // No products found in response
+                    console.log('No products found in response');
                     hasMoreProducts = false;
                     $('#no-more-products').removeClass('d-none');
                 }
             } else {
-                // If no products list found, no more products
+                console.log('No products list container found');
                 hasMoreProducts = false;
                 $('#no-more-products').removeClass('d-none');
             }
